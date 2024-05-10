@@ -38,10 +38,6 @@ class Model:
 
         train_input = pd.read_csv(f"{self.__dataset_save_path}/train_input.csv", header=None)
         train_output = pd.read_csv(f"{self.__dataset_save_path}/train_output.csv", header=None)
-        # train_tf = tf.convert_to_tensor(train_input).shape[0]
-        # train_tf_o = tf.convert_to_tensor(train_output).shape[0]
-        # print(train_tf.shape)
-        # print(train_tf_o.shape)
         print(train_input.shape)
         print(train_output.shape)
 
@@ -55,12 +51,13 @@ class Model:
 
     def __get_model(self) -> tf.keras.Model:
         model = tf.keras.Sequential([
-            # tf.keras.layers.Flatten(input_shape=(163014, 1)),
             tf.keras.layers.Dense(166, activation='relu'),
-            tf.keras.layers.Dense(10)
+            tf.keras.layers.Dense(3),
+            #tf.keras.layers.Softmax()
         ])
         # TODO настроить compile
-        model.compile(loss=tf.keras.losses.categorical_hinge)
+        model.compile(loss=tf.keras.losses.categorical_hinge,
+                      metrics=['accuracy'])
         return model
 
     # ==================================================================================================================

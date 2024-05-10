@@ -4,8 +4,6 @@ import Sources.DatasetAnalys as DatasetAnalys
 import Sources.Model as Model
 import Sources.DatasetPreprocessing as DatasetPreprocessing
 
-# 166
-
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read("settings.ini")
