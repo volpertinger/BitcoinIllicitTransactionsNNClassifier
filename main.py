@@ -18,7 +18,10 @@ if __name__ == '__main__':
                                              config["Dataset"]["classes_path"],
                                              config["Dataset"]["edge_list_path"],
                                              config["Dataset"]["features_path"],
-                                             config["Saves"]["dataset"])
+                                             config["Saves"]["dataset"],
+                                             config.getint("Learn", "seed"),
+                                             config.getfloat("Learn", "train_test_split"),
+                                             config.getfloat("Learn", "test_validation_split"))
 
     if config.getboolean("Actions", "is_need_to_analyse_dataset"):
         analyser = DatasetAnalys.DatasetAnalyser(config["Dataset"]["classes_path"],
@@ -28,7 +31,12 @@ if __name__ == '__main__':
         analyser.analyse()
 
     if config.getboolean("Actions", "is_need_to_learn") or config.getboolean("Actions", "is_need_to_test"):
-        model = Model.Model(config["Saves"]["dataset"], config["Saves"]["weights"], logger)
+        model = Model.Model(config["Saves"]["dataset"],
+                            config["Saves"]["weights"],
+                            config.getfloat("Learn", "test_split_ratio"),
+                            config.getfloat("Learn", "validation_from_test_split_ratio"),
+                            config.getint("Learn", "seed"),
+                            logger)
 
         if config.getboolean("Actions", "is_need_to_learn"):
             model.learn()

@@ -1,70 +1,65 @@
 import logging
-import torch
 import pandas as pd
-import numpy as np
-from torch_geometric.data import Data
-import pickle
+from sklearn.model_selection import train_test_split
 
 
 def preprocess_data(logger: logging.Logger,
                     classes_path: str,
                     edges_path: str,
                     features_path: str,
-                    save_path: str):
+                    save_path: str,
+                    seed: int,
+                    train_test_split_ratio: float,
+                    test_validation_split_ratio: float):
     logger_prefix = "[preprocess_data]"
-    logger.info(f"{logger_prefix} start preprocessing for:\nclasses: {classes_path}\nedges: {edges_path}\n"
+    logger.info(f"{logger_prefix}\nstart preprocessing for:\nclasses: {classes_path}\nedges: {edges_path}\n"
                 f"features: {features_path}")
 
     # read csv
     logger.info(f"{logger_prefix} reading csv")
     df_features = pd.read_csv(features_path, header=None)
-    df_edges = pd.read_csv(edges_path)
     df_classes = pd.read_csv(classes_path)
 
     # mapping all classes to int
     logger.info(f"{logger_prefix} mapping classes to int")
     df_classes['class'] = df_classes['class'].map({'unknown': 3, '1': 1, '2': 2})
 
-    # merging node features DF with classes DF
-    logger.info(f"{logger_prefix} mapping node features DF with classes DF")
-    df_merge = df_features.merge(df_classes, how='left', right_on="txId", left_on=0)
-    df_merge = df_merge.sort_values(0).reset_index(drop=True)
+    # deleting axis
+    logger.info(f"{logger_prefix} deleting axis in classes")
+    df_classes = df_classes.drop(columns=["txId"], axis="columns")
+    logger.info(f"{logger_prefix} deleting axis in features")
+    df_features = df_features.drop(columns=[0], axis="columns")
 
-    # mapping nodes to indices
-    logger.info(f"{logger_prefix} mapping nodes to indices")
-    nodes = df_merge[0].values
-    map_id = {j: i for i, j in enumerate(nodes)}
+    # split to train, test, validation
+    train_classes, test_classes, train_features, test_features = train_test_split(df_classes,
+                                                                                  df_features,
+                                                                                  random_state=seed,
+                                                                                  train_size=train_test_split_ratio)
 
-    # mapping edges to indices
-    logger.info(f"{logger_prefix} mapping edges to indices")
-    edges = df_edges.copy()
-    edges.txId1 = edges.txId1.map(map_id)
-    edges.txId2 = edges.txId2.map(map_id)
-    edges = edges.astype(int)
+    test_classes, validation_classes, test_features, validation_features = train_test_split(test_classes,
+                                                                                            test_features,
+                                                                                            random_state=seed,
+                                                                                            train_size=test_validation_split_ratio)
 
-    edge_index = np.array(edges.values).T
-    edge_index = torch.tensor(edge_index, dtype=torch.long).contiguous()
+    logger.info(f"{logger_prefix}\n"
+                f"total classes: {len(df_classes)}\n"
+                f"total features: {len(df_features)}\n"
+                f"train classes: {len(train_classes)}\n"
+                f"train features: {len(train_features)}\n"
+                f"test classes: {len(test_classes)}\n"
+                f"test features: {len(test_features)}\n"
+                f"validation classes: {len(validation_classes)}\n"
+                f"validation features: {len(validation_features)}")
 
-    # weights for the edges are equal in case of model without attention
-    weights = torch.tensor([1] * edge_index.shape[1], dtype=torch.float32)
+    # write csv
+    logger.info(f"{logger_prefix} writing classes csv")
+    train_classes.to_csv(f"{save_path}/train_input.csv", index=False, header=False)
+    test_classes.to_csv(f"{save_path}/test_input.csv", index=False, header=False)
+    validation_classes.to_csv(f"{save_path}/validation_input.csv", index=False, header=False)
 
-    # mapping node ids to corresponding indexes
-    logger.info(f"{logger_prefix} mapping node ids to corresponding indexes")
-    node_features = df_merge.drop(['txId'], axis=1).copy()
-    node_features[0] = node_features[0].map(map_id)
+    logger.info(f"{logger_prefix} writing features csv")
+    train_features.to_csv(f"{save_path}/train_output.csv", index=False, header=False)
+    test_features.to_csv(f"{save_path}/test_output.csv", index=False, header=False)
+    validation_features.to_csv(f"{save_path}/validation_output.csv", index=False, header=False)
 
-    labels = node_features['class'].values
-    node_features = torch.tensor(np.array(node_features.values, dtype=np.float32), dtype=torch.float32)
-
-    # converting data to PyGeometric graph data format
-    logger.info(f"{logger_prefix} converting data to PyGeometric graph data format")
-    elliptic_dataset = Data(x=node_features,
-                            edge_index=edge_index,
-                            edge_attr=weights,
-                            y=torch.tensor(labels, dtype=torch.float32))
-
-    logger.info(f"{logger_prefix} saving with pickle")
-    with open(save_path, 'wb') as f:
-        pickle.dump(elliptic_dataset, f, pickle.HIGHEST_PROTOCOL)
-
-    logger.info(f"{logger_prefix} ended")
+    logger.info(f"{logger_prefix} end")
