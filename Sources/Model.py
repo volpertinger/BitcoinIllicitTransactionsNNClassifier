@@ -10,38 +10,20 @@ import torch
 import warnings
 import seaborn as sns
 
-from sklearn.metrics import confusion_matrix, classification_report
-from sklearn.model_selection import train_test_split
-from torch_geometric.utils import to_networkx
-from torch_geometric.data import Data, DataLoader
-import torch.nn.functional as F
-from torch.nn import Linear, BatchNorm1d
-from torch_geometric.nn import GATv2Conv
-from torch.utils.data import random_split
-from types import SimpleNamespace
-import pickle
-
-warnings.filterwarnings('ignore')
-
 
 class Model:
 
     def __init__(self,
-                 dataset_save_path: str,
+                 dataset_dir: str,
                  weight_save_dir: str,
-                 test_split: float,
-                 validation_split: float,
-                 seed: int,
+                 epochs: int,
                  logger: logging.Logger = logging.getLogger()):
-
         self.__logger_prefix = "[Model]"
         self.__logger = logger
-        self.__dataset_save_path = dataset_save_path
+        self.__dataset_save_path = dataset_dir
         self.__weight_save_dir = weight_save_dir
-        self.__test_split = test_split
-        self.__validation_split = validation_split
-        self.__seed = seed
-        self.__dataset: Data = Data()
+        self.__epochs = epochs
+        self.__model = self.__get_model()
 
     # ==================================================================================================================
     # PRIVATE
@@ -50,50 +32,36 @@ class Model:
     def __get_logger_prefix(self, prefix: str) -> str:
         return f"{self.__logger_prefix} [{prefix}]"
 
-    def __load_dataset(self, ) -> Data:
-        with open(self.__dataset_save_path, 'rb') as f:
-            elliptic_dataset = pickle.load(f)
-
-        print(f'Number of nodes: {elliptic_dataset.num_nodes}')
-        print(f'Number of node features: {elliptic_dataset.num_features}')
-        print(f'Number of edges: {elliptic_dataset.num_edges}')
-        print(f'Number of edge features: {elliptic_dataset.num_features}')
-        print(f'Average node degree: {elliptic_dataset.num_edges / elliptic_dataset.num_nodes:.2f}')
-        print(f'Number of classes: {len(np.unique(elliptic_dataset.y))}')
-        print(f'Has isolated nodes: {elliptic_dataset.has_isolated_nodes()}')
-        print(f'Has self loops: {elliptic_dataset.has_self_loops()}')
-        print(f'Is directed: {elliptic_dataset.is_directed()}')
-
-        return elliptic_dataset
-
     def __full_learn(self):
         logger_prefix = self.__get_logger_prefix("__full_learn")
         self.__logger.info(f"{logger_prefix} start")
-        if len(self.__dataset) == 0:
-            self.__logger.info(f"{logger_prefix} self.__dataset is empty, can`t learn model")
-        else:
-            # get test, train, validation indexes
-            train_idx, test_val_idx = train_test_split(range(self.__dataset.num_nodes),
-                                                       random_state=self.__seed,
-                                                       shuffle=True,
-                                                       test_size=self.__test_split)
 
-            test_idx, val_idx = train_test_split(test_val_idx,
-                                                 random_state=self.__seed,
-                                                 shuffle=True,
-                                                 test_size=self.__validation_split)
+        train_input = pd.read_csv(f"{self.__dataset_save_path}/train_input.csv", header=None)
+        train_output = pd.read_csv(f"{self.__dataset_save_path}/train_output.csv", header=None)
+        # train_tf = tf.convert_to_tensor(train_input).shape[0]
+        # train_tf_o = tf.convert_to_tensor(train_output).shape[0]
+        # print(train_tf.shape)
+        # print(train_tf_o.shape)
+        print(train_input.shape)
+        print(train_output.shape)
 
-            self.__dataset.train_idx = torch.tensor(train_idx, dtype=torch.long)
-            self.__dataset.test_idx = torch.tensor(test_idx, dtype=torch.long)
-            self.__dataset.val_idx = torch.tensor(val_idx, dtype=torch.long)
-
-            self.__logger.info(f"{logger_prefix}\n"
-                               f"total nodes: {self.__dataset.num_nodes}\n"
-                               f"train nodes: {len(train_idx)}\n"
-                               f"test nodes: {len(test_idx)}\n"
-                               f"validation nodes: {len(val_idx)}")
+        self.__model.fit(
+            x=train_input,
+            y=train_output,
+            epochs=self.__epochs
+        )
 
         self.__logger.info(f"{logger_prefix} end")
+
+    def __get_model(self) -> tf.keras.Model:
+        model = tf.keras.Sequential([
+            # tf.keras.layers.Flatten(input_shape=(163014, 1)),
+            tf.keras.layers.Dense(166, activation='relu'),
+            tf.keras.layers.Dense(10)
+        ])
+        # TODO настроить compile
+        model.compile(loss=tf.keras.losses.categorical_hinge)
+        return model
 
     # ==================================================================================================================
     # PUBLIC
@@ -102,14 +70,6 @@ class Model:
     def learn(self) -> None:
         logger_prefix = self.__get_logger_prefix("learn")
         self.__logger.info(f"{logger_prefix} start")
-
-        # preprocessed dataset loading
-        self.__logger.info(f"{logger_prefix} preprocessed dataset loading")
-        try:
-            self.__dataset = self.__load_dataset()
-        except Exception as e:
-            self.__logger.error(f"{logger_prefix} {e}")
-            self.__logger.info(f"{logger_prefix} stop due to exception")
 
         self.__full_learn()
 

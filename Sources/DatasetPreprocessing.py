@@ -23,6 +23,8 @@ def preprocess_data(logger: logging.Logger,
     # mapping all classes to int
     logger.info(f"{logger_prefix} mapping classes to int")
     df_classes['class'] = df_classes['class'].map({'unknown': 3, '1': 1, '2': 2})
+    # mapping all classes to probability array
+    #df_classes['class'] = df_classes['class'].map({1: [1, 0, 0], 2: [0, 1, 0], 3: [0, 0, 1]})
 
     # deleting axis
     logger.info(f"{logger_prefix} deleting axis in classes")
@@ -53,13 +55,13 @@ def preprocess_data(logger: logging.Logger,
 
     # write csv
     logger.info(f"{logger_prefix} writing classes csv")
-    train_classes.to_csv(f"{save_path}/train_input.csv", index=False, header=False)
-    test_classes.to_csv(f"{save_path}/test_input.csv", index=False, header=False)
-    validation_classes.to_csv(f"{save_path}/validation_input.csv", index=False, header=False)
+    train_classes.to_csv(f"{save_path}/train_output.csv", index=False, header=False)
+    test_classes.to_csv(f"{save_path}/test_output.csv", index=False, header=False)
+    validation_classes.to_csv(f"{save_path}/validation_output.csv", index=False, header=False)
 
     logger.info(f"{logger_prefix} writing features csv")
-    train_features.to_csv(f"{save_path}/train_output.csv", index=False, header=False)
-    test_features.to_csv(f"{save_path}/test_output.csv", index=False, header=False)
-    validation_features.to_csv(f"{save_path}/validation_output.csv", index=False, header=False)
+    train_features.to_csv(f"{save_path}/train_input.csv", index=False, header=False)
+    test_features.to_csv(f"{save_path}/test_input.csv", index=False, header=False)
+    validation_features.to_csv(f"{save_path}/validation_input.csv", index=False, header=False)
 
     logger.info(f"{logger_prefix} end")

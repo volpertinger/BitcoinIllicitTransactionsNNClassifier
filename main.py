@@ -4,6 +4,8 @@ import Sources.DatasetAnalys as DatasetAnalys
 import Sources.Model as Model
 import Sources.DatasetPreprocessing as DatasetPreprocessing
 
+# 166
+
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read("settings.ini")
@@ -33,9 +35,7 @@ if __name__ == '__main__':
     if config.getboolean("Actions", "is_need_to_learn") or config.getboolean("Actions", "is_need_to_test"):
         model = Model.Model(config["Saves"]["dataset"],
                             config["Saves"]["weights"],
-                            config.getfloat("Learn", "test_split_ratio"),
-                            config.getfloat("Learn", "validation_from_test_split_ratio"),
-                            config.getint("Learn", "seed"),
+                            config.getint("Learn", "max_epochs"),
                             logger)
 
         if config.getboolean("Actions", "is_need_to_learn"):
