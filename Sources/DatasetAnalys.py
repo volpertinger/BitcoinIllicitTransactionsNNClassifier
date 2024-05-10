@@ -35,8 +35,6 @@ class DatasetAnalyser:
     # PUBLIC
     # ==================================================================================================================
 
-    # TODO: разбить и сделать адекватно
-
     def __get_df_heads_str(self):
         return f"{'=' * 120}\n" \
                f"classes\n{self.__df_classes.head()}\n" \
