@@ -1,7 +1,6 @@
 import logging
 import pandas as pd
 import tensorflow as tf
-import numpy as np
 
 
 class Model:
@@ -46,6 +45,9 @@ class Model:
         # get compiled model
         self.__model = self.__get_model()
 
+        # flag for avoid unnecessary model loading (plotting after train, for example)
+        self.__is_fresh_learned = False
+
     # ==================================================================================================================
     # PRIVATE
     # ==================================================================================================================
@@ -70,6 +72,7 @@ class Model:
 
     def __load_model(self) -> None:
         self.__model = tf.keras.models.load_model(self.__save_file_path)
+        self.__is_fresh_learned = True
 
     def __get_model(self) -> tf.keras.Model:
         model = tf.keras.Sequential([
@@ -122,7 +125,7 @@ class Model:
 
         self.__logger.info(f"{logger_prefix} end")
 
-    def __full_learn(self) -> None:
+    def __learn(self) -> None:
         logger_prefix = self.__get_logger_prefix("__full_learn")
         self.__logger.info(f"{logger_prefix} start")
 
@@ -132,6 +135,7 @@ class Model:
             validation_data=(self.__test_input, self.__test_output),
             epochs=self.__epochs
         )
+        self.__is_fresh_learned = True
         self.__save_model()
 
         self.__logger.info(f"{logger_prefix} end")
@@ -146,20 +150,31 @@ class Model:
 
         self.__init_train()
         self.__init_test()
-        self.__full_learn()
+        self.__learn()
 
         self.__logger.info(f"{logger_prefix} end")
 
     def plot_results(self) -> None:
-        self.__load_model()
-        print("ss")
+        logger_prefix = self.__get_logger_prefix("plot_results")
+        self.__logger.info(f"{logger_prefix} start")
+        if not self.__is_fresh_learned:
+            self.__logger.info(f"{logger_prefix} loading saved model")
+            self.__load_model()
+        else:
+            self.__logger.info(f"{logger_prefix} model is fresh, continue with current weights")
+        self.__logger.info(f"{logger_prefix} end")
 
     def start_test(self) -> None:
         logger_prefix = self.__get_logger_prefix("start_test")
         self.__logger.info(f"{logger_prefix} start")
 
-        self.__init_validation()
+        if not self.__is_fresh_learned:
+            self.__logger.info(f"{logger_prefix} loading saved model")
+            self.__load_model()
+        else:
+            self.__logger.info(f"{logger_prefix} model is fresh, continue with current weights")
 
+        self.__init_validation()
         validation_loss, validation_acc = self.__model.evaluate(self.__validation_input, self.__validation_output)
         self.__logger.info(f"{logger_prefix} Validation accuracy: {validation_acc}; Validation loss: {validation_loss}")
 
