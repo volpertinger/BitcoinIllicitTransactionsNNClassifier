@@ -1,5 +1,4 @@
 import logging
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pandas import DataFrame
@@ -30,8 +29,8 @@ class DatasetAnalyser:
         self.__df_features: DataFrame = pd.read_csv(self.__features_path)
 
         # color legend, labels
-        self.__colors = {"illicit": "red", "licit": "green", "unknown": "orange"}
-        self.__classes_en_to_rus = {"illicit": "Нелегальная", "licit": "Легальная", "unknown": "Неизвестная"}
+        self.__colors = {"illicit": "red", "licit": "green"}
+        self.__classes_en_to_rus = {"illicit": "Нелегальная", "licit": "Легальная"}
 
         # prettify csv
         self.__df_prettify()
@@ -51,9 +50,9 @@ class DatasetAnalyser:
     def __df_prettify(self) -> None:
         # classes
         self.__df_classes["class"] = self.__df_classes["class"].map(
-            {"1": self.__classes_en_to_rus["illicit"],
-             "2": self.__classes_en_to_rus["licit"],
-             "unknown": self.__classes_en_to_rus["unknown"]})
+            {"1": self.__classes_en_to_rus["licit"],
+             "2": self.__classes_en_to_rus["illicit"],
+             "unknown": self.__classes_en_to_rus["licit"]})
         self.__df_classes = self.__df_classes.rename(columns={"txId": "tx_id"})
 
         # edges
@@ -83,8 +82,7 @@ class DatasetAnalyser:
         bars = ax.bar(x=indexes,
                       height=values,
                       color=[self.__colors["illicit"],
-                             self.__colors["licit"],
-                             self.__colors["unknown"]])
+                             self.__colors["licit"]])
         ax.bar_label(bars)
         for bars in ax.containers:
             ax.bar_label(bars)
@@ -109,22 +107,17 @@ class DatasetAnalyser:
 
         # count classes
         class_illisit = group_class_feature[group_class_feature["class"] == self.__classes_en_to_rus["illicit"]]
-        class_lisit = group_class_feature[group_class_feature['class'] == self.__classes_en_to_rus["licit"]]
-        class_unknown = group_class_feature[group_class_feature['class'] == self.__classes_en_to_rus["unknown"]]
+        class_lisit = group_class_feature[group_class_feature["class"] == self.__classes_en_to_rus["licit"]]
 
         # plotting
         fig, ax = plt.subplots()
-        ax.bar(x=class_unknown['time_step'],
-               height=class_unknown['count'],
-               color='orange')
         ax.bar(x=class_lisit['time_step'],
                height=class_lisit['count'],
-               color='green',
-               bottom=class_unknown['count'])
+               color='green')
         ax.bar(x=class_illisit['time_step'],
                height=class_illisit['count'],
                color='red',
-               bottom=np.array(class_unknown['count']) + np.array(class_lisit['count']))
+               bottom=class_lisit['count'])
 
         labels = list(self.__colors.keys())
         labels_translated = [self.__classes_en_to_rus[i] for i in labels]

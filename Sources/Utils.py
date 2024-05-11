@@ -41,6 +41,9 @@ def model_actions(config: configparser.ConfigParser, logger: Logger) -> None:
                         output_neurons=config.getint("Learn", "output_neurons"),
                         hidden_neurons=config.getint("Learn", "hidden_neurons"),
                         seed=config.getint("Learn", "seed"),
+                        plot_save_dir=config["Saves"]["model"],
+                        plot_width=config.getint("Plot", "width"),
+                        plot_height=config.getint("Plot", "height"),
                         logger=logger)
 
     if config.getboolean("Actions", "is_need_to_learn"):

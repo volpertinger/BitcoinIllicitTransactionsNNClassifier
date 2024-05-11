@@ -1,6 +1,9 @@
 import logging
+
 import pandas as pd
 import tensorflow as tf
+import matplotlib.pyplot as plt
+import pickle
 
 
 class Model:
@@ -16,6 +19,9 @@ class Model:
                  output_neurons: int,
                  hidden_neurons: int,
                  seed: int,
+                 plot_width: int,
+                 plot_height: int,
+                 plot_save_dir: str,
                  logger: logging.Logger = logging.getLogger()):
         # base init from params
         self.__logger_prefix = "[Model]"
@@ -30,6 +36,9 @@ class Model:
         self.__output_neurons = output_neurons
         self.__hidden_neurons = hidden_neurons
         self.__seed = seed
+        self.__plot_width = plot_width
+        self.__plot_height = plot_height
+        self.__plot_save_dir = plot_save_dir
 
         # init None inputs and outputs
         self.__train_input = None
@@ -40,7 +49,8 @@ class Model:
         self.__validation_output = None
 
         # init save file
-        self.__save_file_path = f"{self.__weight_save_dir}/save"
+        self.__save_model_dir = f"{self.__weight_save_dir}/save"
+        self.__save_history_file = f"{self.__weight_save_dir}/save/history.save"
 
         # get compiled model
         self.__model = self.__get_model()
@@ -68,31 +78,72 @@ class Model:
         self.__validation_output = pd.read_csv(f"{self.__dataset_save_path}/validation_output.csv", header=None)
 
     def __save_model(self) -> None:
-        self.__model.save(self.__save_file_path)
+        self.__model.save(self.__save_model_dir)
+        with open(self.__save_history_file, "wb") as f:
+            pickle.dump(obj=self.__model.history, file=f)
 
     def __load_model(self) -> None:
-        self.__model = tf.keras.models.load_model(self.__save_file_path)
+        self.__model = tf.keras.models.load_model(self.__save_model_dir)
+        with open(self.__save_history_file, "rb") as f:
+            self.__model.history = pickle.load(file=f)
         self.__is_fresh_learned = True
 
     def __get_model(self) -> tf.keras.Model:
         model = tf.keras.Sequential([
             tf.keras.layers.Dense(units=self.__input_neurons, activation=self.__activation),
-            tf.keras.layers.Dense(units=self.__hidden_neurons, activation=self.__activation),
-            tf.keras.layers.Dropout(rate=self.__dropout_rate, seed=self.__seed),
-            tf.keras.layers.Dense(units=self.__hidden_neurons, activation=self.__activation),
-            tf.keras.layers.Dropout(rate=self.__dropout_rate, seed=self.__seed),
-            tf.keras.layers.Dense(units=self.__hidden_neurons, activation=self.__activation),
+            tf.keras.layers.Dense(30, activation=self.__activation),
             tf.keras.layers.Dropout(rate=self.__dropout_rate, seed=self.__seed),
             tf.keras.layers.Dense(units=self.__output_neurons),
             tf.keras.layers.Softmax()
         ])
         model.compile(optimizer=self.__optimizer,
                       loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-                      metrics=['accuracy'])
+                      metrics=["accuracy"])
         return model
+
+    def __plot_by_epochs(self, lhs, rhs, lhs_label: str, rhs_label: str, x_label: str, y_label: str, title: str,
+                         save_file_name: str):
+        fig, ax = plt.subplots()
+        ax.plot(lhs, label=lhs_label)
+        ax.plot(rhs, label=rhs_label)
+        ax.legend()
+        fig.set_figwidth(self.__plot_width)
+        fig.set_figheight(self.__plot_height)
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
+        plt.title(title)
+        plt.savefig(f"{self.__plot_save_dir}/{save_file_name}.png")
+        plt.show()
 
     def __plot_history(self) -> None:
         logger_prefix = self.__get_logger_prefix("__plot_history")
+        self.__logger.info(f"{logger_prefix} start")
+
+        # accuracy
+        self.__logger.info(f"{logger_prefix} plot accuracy")
+        self.__plot_by_epochs(lhs=self.__model.history.history["accuracy"],
+                              rhs=self.__model.history.history["val_accuracy"],
+                              lhs_label="Training accuracy",
+                              rhs_label="Validation accuracy",
+                              x_label="Epochs",
+                              y_label="Accuracy",
+                              title="Training and validation accuracy",
+                              save_file_name="accuracy_by_epoch")
+        # loss
+        self.__logger.info(f"{logger_prefix} plot loss")
+        self.__plot_by_epochs(lhs=self.__model.history.history["loss"],
+                              rhs=self.__model.history.history["val_loss"],
+                              lhs_label="Training loss",
+                              rhs_label="Validation loss",
+                              x_label="Epochs",
+                              y_label="Loss",
+                              title="Training and validation loss",
+                              save_file_name="loss_by_epoch")
+
+        self.__logger.info(f"{logger_prefix} end")
+
+    def __plot_metrics(self) -> None:
+        logger_prefix = self.__get_logger_prefix("__plot_metrics")
         self.__logger.info(f"{logger_prefix} start")
 
         self.__logger.info(f"{logger_prefix} end")
@@ -162,6 +213,9 @@ class Model:
             self.__load_model()
         else:
             self.__logger.info(f"{logger_prefix} model is fresh, continue with current weights")
+        self.__plot_history()
+        self.__plot_metrics()
+
         self.__logger.info(f"{logger_prefix} end")
 
     def start_test(self) -> None:
