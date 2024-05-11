@@ -28,6 +28,8 @@ if __name__ == '__main__':
                                                  config["Dataset"]["edge_list_path"],
                                                  config["Dataset"]["features_path"],
                                                  config["Saves"]["analyse"],
+                                                 config.getint("Plot", "width"),
+                                                 config.getint("Plot", "height"),
                                                  logger)
         analyser.analyse()
 

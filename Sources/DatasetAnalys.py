@@ -2,7 +2,6 @@ import logging
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pandas import DataFrame
 
 
@@ -12,6 +11,8 @@ class DatasetAnalyser:
                  edges_path: str,
                  features_path: str,
                  plot_save_dir: str,
+                 plot_width: int,
+                 plot_height: int,
                  logger: logging.Logger = logging.getLogger()):
         # init from params
         self.__logger_prefix = "[DatasetAnalyser]"
@@ -20,6 +21,8 @@ class DatasetAnalyser:
         self.__edges_path = edges_path
         self.__features_path = features_path
         self.__plot_save_dir = plot_save_dir
+        self.__plot_width = plot_width
+        self.__plot_height = plot_height
 
         # read csv
         self.__df_classes: DataFrame = pd.read_csv(self.__classes_path)
@@ -87,6 +90,8 @@ class DatasetAnalyser:
             ax.bar_label(bars)
 
         # prettify, save, show
+        fig.set_figwidth(self.__plot_width)
+        fig.set_figheight(self.__plot_height)
         plt.xlabel("Класс транзакции")
         plt.ylabel("Количество транзакций")
         plt.title("Transactions by classes bar")
@@ -108,17 +113,18 @@ class DatasetAnalyser:
         class_unknown = group_class_feature[group_class_feature['class'] == self.__classes_en_to_rus["unknown"]]
 
         # plotting
-        plt.bar(x=class_unknown['time_step'],
-                height=class_unknown['count'],
-                color='orange')
-        plt.bar(x=class_lisit['time_step'],
-                height=class_lisit['count'],
-                color='green',
-                bottom=class_unknown['count'])
-        plt.bar(x=class_illisit['time_step'],
-                height=class_illisit['count'],
-                color='red',
-                bottom=np.array(class_unknown['count']) + np.array(class_lisit['count']))
+        fig, ax = plt.subplots()
+        ax.bar(x=class_unknown['time_step'],
+               height=class_unknown['count'],
+               color='orange')
+        ax.bar(x=class_lisit['time_step'],
+               height=class_lisit['count'],
+               color='green',
+               bottom=class_unknown['count'])
+        ax.bar(x=class_illisit['time_step'],
+               height=class_illisit['count'],
+               color='red',
+               bottom=np.array(class_unknown['count']) + np.array(class_lisit['count']))
 
         labels = list(self.__colors.keys())
         labels_translated = [self.__classes_en_to_rus[i] for i in labels]
@@ -126,6 +132,8 @@ class DatasetAnalyser:
         plt.legend(handles, labels_translated)
 
         # prettify, save, show
+        fig.set_figwidth(self.__plot_width)
+        fig.set_figheight(self.__plot_height)
         plt.xlabel("Временной шаг")
         plt.ylabel("Количество транзакций")
         plt.title("Classes bar by time step")
