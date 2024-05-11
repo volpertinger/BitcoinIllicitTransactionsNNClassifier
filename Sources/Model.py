@@ -41,7 +41,7 @@ class Model:
         self.__validation_output = None
 
         # init save file
-        self.__save_file_path = f"{self.__weight_save_dir}/save.HD5"
+        self.__save_file_path = f"{self.__weight_save_dir}/save"
 
         # get compiled model
         self.__model = self.__get_model()
@@ -64,6 +64,12 @@ class Model:
     def __init_validation(self) -> None:
         self.__validation_input = pd.read_csv(f"{self.__dataset_save_path}/validation_input.csv", header=None)
         self.__validation_output = pd.read_csv(f"{self.__dataset_save_path}/validation_output.csv", header=None)
+
+    def __save_model(self) -> None:
+        self.__model.save(self.__save_file_path)
+
+    def __load_model(self) -> None:
+        self.__model = tf.keras.models.load_model(self.__save_file_path)
 
     def __get_model(self) -> tf.keras.Model:
         model = tf.keras.Sequential([
@@ -126,7 +132,7 @@ class Model:
             validation_data=(self.__test_input, self.__test_output),
             epochs=self.__epochs
         )
-        self.__model.save(self.__save_file_path)
+        self.__save_model()
 
         self.__logger.info(f"{logger_prefix} end")
 
@@ -139,13 +145,14 @@ class Model:
         self.__logger.info(f"{logger_prefix} start")
 
         self.__init_train()
+        self.__init_test()
         self.__full_learn()
-        self.__plot_history()
 
         self.__logger.info(f"{logger_prefix} end")
 
     def plot_results(self) -> None:
-        self.__model.load_weights(self.__save_file_path)
+        self.__load_model()
+        print("ss")
 
     def start_test(self) -> None:
         logger_prefix = self.__get_logger_prefix("start_test")

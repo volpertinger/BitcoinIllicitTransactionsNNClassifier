@@ -31,21 +31,23 @@ def analyse_data(config: configparser.ConfigParser, logger: Logger) -> None:
 
 
 def model_actions(config: configparser.ConfigParser, logger: Logger) -> None:
-    if config.getboolean("Actions", "is_need_to_learn") or config.getboolean("Actions", "is_need_to_test"):
-        model = Model.Model(dataset_dir=config["Saves"]["dataset"],
-                            weight_save_dir=config["Saves"]["weights"],
-                            epochs=config.getint("Learn", "max_epochs"),
-                            dropout_rate=config.getfloat("Learn", "dropout_rate"),
-                            activation=config["Learn"]["activation"],
-                            optimizer=config["Learn"]["optimizer"],
-                            input_neurons=config.getint("Learn", "input_neurons"),
-                            output_neurons=config.getint("Learn", "output_neurons"),
-                            hidden_neurons=config.getint("Learn", "hidden_neurons"),
-                            seed=config.getint("Learn", "seed"),
-                            logger=logger)
+    model = Model.Model(dataset_dir=config["Saves"]["dataset"],
+                        weight_save_dir=config["Saves"]["weights"],
+                        epochs=config.getint("Learn", "max_epochs"),
+                        dropout_rate=config.getfloat("Learn", "dropout_rate"),
+                        activation=config["Learn"]["activation"],
+                        optimizer=config["Learn"]["optimizer"],
+                        input_neurons=config.getint("Learn", "input_neurons"),
+                        output_neurons=config.getint("Learn", "output_neurons"),
+                        hidden_neurons=config.getint("Learn", "hidden_neurons"),
+                        seed=config.getint("Learn", "seed"),
+                        logger=logger)
 
-        if config.getboolean("Actions", "is_need_to_learn"):
-            model.learn()
+    if config.getboolean("Actions", "is_need_to_learn"):
+        model.learn()
 
-        if config.getboolean("Actions", "is_need_to_test"):
-            model.start_test()
+    if config.getboolean("Actions", "is_need_to_plot_learn_results"):
+        model.plot_results()
+
+    if config.getboolean("Actions", "is_need_to_test"):
+        model.start_test()
