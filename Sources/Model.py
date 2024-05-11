@@ -40,6 +40,9 @@ class Model:
         self.__validation_input = None
         self.__validation_output = None
 
+        # init save file
+        self.__save_file_path = f"{self.__weight_save_dir}/save.HD5"
+
         # get compiled model
         self.__model = self.__get_model()
 
@@ -89,17 +92,18 @@ class Model:
         logger_prefix = self.__get_logger_prefix("__test_loop")
         self.__logger.info(f"{logger_prefix} start")
 
+        validation_output_array = self.__validation_output.to_numpy()
         validation_length = len(self.__validation_input)
-        self.__logger.info(f"{logger_prefix}]n"
-                           f"Instruction:\n"
-                           f"Enter an index from 0 to {validation_length - 1} from validation input to test"
-                           f"Enter an empty string or not number to stop")
-
         predictions = self.__model.predict(self.__validation_input)
+        self.__logger.info(f"{logger_prefix}\n"
+                           f"Instruction:\n"
+                           f"Enter an index from 0 to {validation_length - 1} from validation input to test\n"
+                           f"Enter an empty string or not number to stop")
 
         while True:
             index = input()
             if not index.isnumeric():
+                self.__logger.info(f"{logger_prefix} input in not numeric, stopping tests")
                 break
             index = int(index)
             if index < 0 or index >= validation_length:
@@ -107,7 +111,8 @@ class Model:
                                     f"Correct values is from 0 to {validation_length - 1}")
             else:
                 self.__logger.info(f"Prediction for index {index}: {predictions[index]}. "
-                                   f"Correct value is {self.__validation_output[index]}")
+                                   f"Most probably class is [{tf.argmax(predictions[index])}]. "
+                                   f"Correct value is {validation_output_array[index]}")
 
         self.__logger.info(f"{logger_prefix} end")
 
@@ -118,8 +123,10 @@ class Model:
         self.__model.fit(
             x=self.__train_input,
             y=self.__train_output,
+            validation_data=(self.__test_input, self.__test_output),
             epochs=self.__epochs
         )
+        self.__model.save(self.__save_file_path)
 
         self.__logger.info(f"{logger_prefix} end")
 
@@ -136,6 +143,9 @@ class Model:
         self.__plot_history()
 
         self.__logger.info(f"{logger_prefix} end")
+
+    def plot_results(self) -> None:
+        self.__model.load_weights(self.__save_file_path)
 
     def start_test(self) -> None:
         logger_prefix = self.__get_logger_prefix("start_test")
