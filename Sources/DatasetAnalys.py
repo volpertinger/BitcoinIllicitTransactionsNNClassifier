@@ -26,6 +26,10 @@ class DatasetAnalyser:
         self.__df_edges: DataFrame = pd.read_csv(self.__edges_path)
         self.__df_features: DataFrame = pd.read_csv(self.__features_path)
 
+        # color legend, labels
+        self.__colors = {"illicit": "red", "licit": "green", "unknown": "orange"}
+        self.__classes_en_to_rus = {"illicit": "Нелегальная", "licit": "Легальная", "unknown": "Неизвестная"}
+
         # prettify csv
         self.__df_prettify()
 
@@ -44,11 +48,19 @@ class DatasetAnalyser:
     def __df_prettify(self) -> None:
         # classes
         self.__df_classes["class"] = self.__df_classes["class"].map(
-            {'1': "Нелегальная", '2': "Легальная", 'unknown': "Неизвестная"})
+            {"1": self.__classes_en_to_rus["illicit"],
+             "2": self.__classes_en_to_rus["licit"],
+             "unknown": self.__classes_en_to_rus["unknown"]})
         self.__df_classes = self.__df_classes.rename(columns={"txId": "tx_id"})
 
         # edges
         self.__df_edges = self.__df_edges.rename(columns={"txId1": "tx_id_lhs", "txId2": "tx_id_rhs"})
+
+        # features
+        self.__df_features.columns = ["tx_id"] + \
+                                     ["time_step"] + \
+                                     [f"local_feature_{i + 1}" for i in range(93)] + \
+                                     [f"aggregated_feature_{i + 1}" for i in range(72)]
 
     def __get_df_heads_str(self) -> str:
         return f"{'=' * 120}\n" \
@@ -58,32 +70,70 @@ class DatasetAnalyser:
                f"{'=' * 120}"
 
     def __plot_classes_bar(self) -> None:
-        indexes = ["Нелегальная", "Легальная", "Неизвестная"]
-        values = [self.__df_classes["class"].value_counts()["Нелегальная"],
-                  self.__df_classes["class"].value_counts()["Легальная"],
-                  self.__df_classes["class"].value_counts()["Неизвестная"]]
+        indexes = list(self.__classes_en_to_rus.values())
+        values = []
+        for index in indexes:
+            values.append(self.__df_classes["class"].value_counts()[index])
 
+        # plotting figure
         fig, ax = plt.subplots()
         bars = ax.bar(x=indexes,
                       height=values,
-                      color=["red", "green", "orange"])
+                      color=[self.__colors["illicit"],
+                             self.__colors["licit"],
+                             self.__colors["unknown"]])
         ax.bar_label(bars)
         for bars in ax.containers:
             ax.bar_label(bars)
 
+        # prettify, save, show
+        plt.xlabel("Класс транзакции")
+        plt.ylabel("Количество транзакций")
         plt.title("Transactions by classes bar")
         plt.savefig(f"{self.__plot_save_dir}/classes_bar.png")
         plt.show()
 
-        # ==================================================================================================================
-        # PUBLIC
-        # ==================================================================================================================
+    def __plot_classes_bar_by_time_step(self):
+        # Merge classes and features
+        df_class_feature = pd.merge(self.__df_classes,
+                                    self.__df_features)
 
-    def __plot_transactions_by_step(self):
-        group_feature = self.__df_features.groupby('time_step').count()
-        group_feature['tx_id'].plot()
-        plt.title('Number of transactions by time_step')
+        # grouping
+        group_class_feature = df_class_feature.groupby(['time_step', 'class']).count()
+        group_class_feature = group_class_feature['tx_id'].reset_index().rename(columns={'tx_id': 'count'})
+
+        # count classes
+        class_illisit = group_class_feature[group_class_feature["class"] == "Нелегальная"]
+        class_lisit = group_class_feature[group_class_feature['class'] == "Легальная"]
+        class_unknown = group_class_feature[group_class_feature['class'] == "Неизвестная"]
+
+        # plotting
+        plt.bar(x=class_unknown['time_step'],
+                height=class_unknown['count'],
+                color='orange')
+        plt.bar(x=class_lisit['time_step'],
+                height=class_lisit['count'],
+                color='green',
+                bottom=class_unknown['count'])
+        plt.bar(x=class_illisit['time_step'],
+                height=class_illisit['count'],
+                color='red',
+                bottom=np.array(class_unknown['count']) + np.array(class_lisit['count']))
+
+        labels = list(self.__colors.keys())
+        handles = [plt.Rectangle((0, 0), 1, 1, color=self.__colors[label]) for label in self.__colors.keys()]
+        plt.legend(handles, labels)
+
+        # prettify, save, show
+        plt.xlabel("Временной шаг")
+        plt.ylabel("Количество транзакций")
+        plt.title("Classes bar by time step")
+        plt.savefig(f"{self.__plot_save_dir}/classes_by_timestep_bar.png")
         plt.show()
+
+    # ==================================================================================================================
+    # PUBLIC
+    # ==================================================================================================================
 
     def __plot_transactions_classes_by_time_step(self):
         # Merge Class and features
@@ -111,7 +161,6 @@ class DatasetAnalyser:
 
         print(self.__get_df_heads_str())
         self.__plot_classes_bar()
-        # self.__plot_transactions_by_step()
-        # self.__plot_transactions_classes_by_time_step()
+        self.__plot_classes_bar_by_time_step()
 
         self.__logger.info(f"{logger_prefix} ended")
