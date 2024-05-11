@@ -24,8 +24,7 @@ def preprocess_data(logger: logging.Logger,
     logger.info(f"{logger_prefix} mapping classes to int")
     df_classes['class'] = df_classes['class'].map({'unknown': 3, '1': 1, '2': 2})
     # mapping all classes to probability array
-    # df_classes['class'] = df_classes['class'].map({1: [1, 0, 0], 2: [0, 1, 0], 3: [0, 0, 1]})
-    df_classes['class'] = df_classes['class'].map({1: 0, 2: 1, 3: 2})
+    #df_classes['class'] = df_classes['class'].map({1: [1, 0, 0], 2: [0, 1, 0], 3: [0, 0, 1]})
 
     # deleting axis
     logger.info(f"{logger_prefix} deleting axis in classes")
