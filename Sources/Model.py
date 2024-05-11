@@ -1,14 +1,7 @@
 import logging
 import pandas as pd
-import networkx as nx
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
-import os
-import copy
-import torch
-import warnings
-import seaborn as sns
 
 
 class Model:
@@ -17,12 +10,21 @@ class Model:
                  dataset_dir: str,
                  weight_save_dir: str,
                  epochs: int,
+                 dropout_rate: float,
+                 activation: str,
+                 optimizer: str,
                  logger: logging.Logger = logging.getLogger()):
+        # base init from params
         self.__logger_prefix = "[Model]"
         self.__logger = logger
         self.__dataset_save_path = dataset_dir
         self.__weight_save_dir = weight_save_dir
         self.__epochs = epochs
+        self.__dropout_rate = dropout_rate
+        self.__activation = activation
+        self.__optimizer = optimizer
+
+        # get compiled model
         self.__model = self.__get_model()
 
     # ==================================================================================================================
@@ -44,7 +46,7 @@ class Model:
                       metrics=['accuracy'])
         return model
 
-    def __full_learn(self):
+    def __full_learn(self) -> None:
         logger_prefix = self.__get_logger_prefix("__full_learn")
         self.__logger.info(f"{logger_prefix} start")
 

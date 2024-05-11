@@ -98,7 +98,7 @@ class DatasetAnalyser:
         plt.savefig(f"{self.__plot_save_dir}/classes_bar.png")
         plt.show()
 
-    def __plot_classes_bar_by_time_step(self):
+    def __plot_classes_bar_by_time_step(self) -> None:
         # Merge classes and features
         df_class_feature = pd.merge(self.__df_classes,
                                     self.__df_features)

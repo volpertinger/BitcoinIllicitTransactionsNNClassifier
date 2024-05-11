@@ -10,7 +10,7 @@ def preprocess_data(logger: logging.Logger,
                     save_path: str,
                     seed: int,
                     train_test_split_ratio: float,
-                    test_validation_split_ratio: float):
+                    test_validation_split_ratio: float) -> None:
     logger_prefix = "[preprocess_data]"
     logger.info(f"{logger_prefix}\nstart preprocessing for:\nclasses: {classes_path}\nedges: {edges_path}\n"
                 f"features: {features_path}")
