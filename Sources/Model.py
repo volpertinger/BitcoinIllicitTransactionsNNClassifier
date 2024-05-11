@@ -4,6 +4,9 @@ import pandas as pd
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import pickle
+import numpy as np
+import Sources.Metrics as Metrics
+from sklearn import metrics
 
 
 class Model:
@@ -91,7 +94,7 @@ class Model:
     def __get_model(self) -> tf.keras.Model:
         model = tf.keras.Sequential([
             tf.keras.layers.Dense(units=self.__input_neurons, activation=self.__activation),
-            tf.keras.layers.Dense(30, activation=self.__activation),
+            tf.keras.layers.Dense(self.__hidden_neurons, activation=self.__activation),
             tf.keras.layers.Dropout(rate=self.__dropout_rate, seed=self.__seed),
             tf.keras.layers.Dense(units=self.__output_neurons),
             tf.keras.layers.Softmax()
@@ -142,9 +145,59 @@ class Model:
 
         self.__logger.info(f"{logger_prefix} end")
 
+    def __plot_confusion_matrix(self, confusion_matrix) -> None:
+        fig, ax = plt.subplots()
+        cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix=confusion_matrix,
+                                                    display_labels=["Легальная", "Нелегальная"])
+        cm_display.plot(ax=ax, values_format="d")
+        fig.set_figwidth(self.__plot_width)
+        fig.set_figheight(self.__plot_height)
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.savefig(f"{self.__plot_save_dir}/confusion_matrix.png")
+        plt.show()
+
+    def __plot_metrics_bar(self, accuracy: float, precision: float, recall: float, f1: float):
+        fig, ax = plt.subplots()
+
+        bars = ax.bar(x=["accuracy", "precision", "recall", "f1"],
+                      height=[accuracy, precision, recall, f1])
+        ax.bar_label(bars)
+        for bars in ax.containers:
+            ax.bar_label(bars)
+
+        fig.set_figwidth(self.__plot_width)
+        fig.set_figheight(self.__plot_height)
+        plt.title("Accuracy, precision, recall, f1")
+        plt.savefig(f"{self.__plot_save_dir}/metrics_bar.png")
+        plt.show()
+
+        print(f"accuracy: {accuracy}\nprecision: {precision}\nrecall: {recall}\nf1: {f1}\n")
+
     def __plot_metrics(self) -> None:
         logger_prefix = self.__get_logger_prefix("__plot_metrics")
         self.__logger.info(f"{logger_prefix} start")
+
+        labels = self.__validation_output.to_numpy().flatten()
+        predictions = self.__model.predict(x=self.__validation_input)
+        predictions = np.argmax(predictions, axis=1)
+        confusion_matrix = metrics.confusion_matrix(labels, predictions)
+
+        print(confusion_matrix)
+        true_negative = confusion_matrix[1][1]
+        true_positive = confusion_matrix[0][0]
+        false_negative = confusion_matrix[0][1]
+        false_positive = confusion_matrix[1][0]
+        accuracy = Metrics.accuracy(true_positive=true_positive,
+                                    true_negative=true_negative,
+                                    false_positive=false_positive,
+                                    false_negative=false_negative)
+        precision = Metrics.precision(true_positive=true_positive, false_positive=false_positive)
+        recall = Metrics.recall(true_positive=true_positive, false_negative=false_negative)
+        f1 = Metrics.f1(true_positive=true_positive, false_positive=false_positive, false_negative=false_negative)
+
+        self.__plot_confusion_matrix(confusion_matrix)
+        self.__plot_metrics_bar(accuracy=accuracy, precision=precision, recall=recall, f1=f1)
 
         self.__logger.info(f"{logger_prefix} end")
 
@@ -213,6 +266,7 @@ class Model:
             self.__load_model()
         else:
             self.__logger.info(f"{logger_prefix} model is fresh, continue with current weights")
+        self.__init_validation()
         self.__plot_history()
         self.__plot_metrics()
 
