@@ -38,6 +38,10 @@ def model_actions(config: configparser.ConfigParser, logger: Logger) -> None:
                             dropout_rate=config.getfloat("Learn", "dropout_rate"),
                             activation=config["Learn"]["activation"],
                             optimizer=config["Learn"]["optimizer"],
+                            input_neurons=config.getint("Learn", "input_neurons"),
+                            output_neurons=config.getint("Learn", "output_neurons"),
+                            hidden_neurons=config.getint("Learn", "hidden_neurons"),
+                            seed=config.getint("Learn", "seed"),
                             logger=logger)
 
         if config.getboolean("Actions", "is_need_to_learn"):
