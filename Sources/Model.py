@@ -32,10 +32,23 @@ class Model:
     def __get_logger_prefix(self, prefix: str) -> str:
         return f"{self.__logger_prefix} [{prefix}]"
 
+    def __get_model(self) -> tf.keras.Model:
+        model = tf.keras.Sequential([
+            tf.keras.layers.Dense(166, activation='relu'),
+            tf.keras.layers.Dense(3),
+            # tf.keras.layers.Softmax()
+        ])
+        # TODO настроить compile
+        model.compile(optimizer='adam',
+                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                      metrics=['accuracy'])
+        return model
+
     def __full_learn(self):
         logger_prefix = self.__get_logger_prefix("__full_learn")
         self.__logger.info(f"{logger_prefix} start")
 
+        # train
         train_input = pd.read_csv(f"{self.__dataset_save_path}/train_input.csv", header=None)
         train_output = pd.read_csv(f"{self.__dataset_save_path}/train_output.csv", header=None)
         print(train_input.shape)
@@ -47,18 +60,24 @@ class Model:
             epochs=self.__epochs
         )
 
-        self.__logger.info(f"{logger_prefix} end")
+        # validation
+        test_input = pd.read_csv(f"{self.__dataset_save_path}/test_input.csv", header=None)
+        test_output = pd.read_csv(f"{self.__dataset_save_path}/test_output.csv", header=None)
+        print(test_input.shape)
+        print(test_output.shape)
 
-    def __get_model(self) -> tf.keras.Model:
-        model = tf.keras.Sequential([
-            tf.keras.layers.Dense(166, activation='relu'),
-            tf.keras.layers.Dense(3),
-            #tf.keras.layers.Softmax()
-        ])
-        # TODO настроить compile
-        model.compile(loss=tf.keras.losses.categorical_hinge,
-                      metrics=['accuracy'])
-        return model
+        test_loss, test_acc = self.__model.evaluate(test_input, test_output, verbose=2)
+
+        print('\nTest accuracy:', test_acc)
+
+        # predictions
+        probability_model = tf.keras.Sequential([self.__model,
+                                                 tf.keras.layers.Softmax()])
+
+        predictions = probability_model.predict(test_input)
+        print(predictions[0])
+
+        self.__logger.info(f"{logger_prefix} end")
 
     # ==================================================================================================================
     # PUBLIC
