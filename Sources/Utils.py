@@ -35,7 +35,7 @@ def model_actions(config: configparser.ConfigParser, logger: Logger) -> None:
         model = Model.Model(dataset_dir=config["Saves"]["dataset"],
                             weight_save_dir=config["Saves"]["weights"],
                             epochs=config.getint("Learn", "max_epochs"),
-                            dropout_rate=config.getfloat("learn", "dropout_rate"),
+                            dropout_rate=config.getfloat("Learn", "dropout_rate"),
                             activation=config["Learn"]["activation"],
                             optimizer=config["Learn"]["optimizer"],
                             logger=logger)
