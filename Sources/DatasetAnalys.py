@@ -7,7 +7,11 @@ from pandas import DataFrame
 
 
 class DatasetAnalyser:
-    def __init__(self, classes_path: str, edges_path: str, features_path: str,
+    def __init__(self,
+                 classes_path: str,
+                 edges_path: str,
+                 features_path: str,
+                 plot_save_dir: str,
                  logger: logging.Logger = logging.getLogger()):
         # init from params
         self.__logger_prefix = "[DatasetAnalyser]"
@@ -15,6 +19,7 @@ class DatasetAnalyser:
         self.__classes_path = classes_path
         self.__edges_path = edges_path
         self.__features_path = features_path
+        self.__plot_save_dir = plot_save_dir
 
         # read csv
         self.__df_classes: DataFrame = pd.read_csv(self.__classes_path)
@@ -66,6 +71,8 @@ class DatasetAnalyser:
         for bars in ax.containers:
             ax.bar_label(bars)
 
+        plt.title("Transactions by classes bar")
+        plt.savefig(f"{self.__plot_save_dir}/classes_bar.png")
         plt.show()
 
         # ==================================================================================================================

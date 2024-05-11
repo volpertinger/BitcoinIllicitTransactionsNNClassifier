@@ -27,6 +27,7 @@ if __name__ == '__main__':
         analyser = DatasetAnalys.DatasetAnalyser(config["Dataset"]["classes_path"],
                                                  config["Dataset"]["edge_list_path"],
                                                  config["Dataset"]["features_path"],
+                                                 config["Saves"]["analyse"],
                                                  logger)
         analyser.analyse()
 
