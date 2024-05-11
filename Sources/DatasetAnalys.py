@@ -103,9 +103,9 @@ class DatasetAnalyser:
         group_class_feature = group_class_feature['tx_id'].reset_index().rename(columns={'tx_id': 'count'})
 
         # count classes
-        class_illisit = group_class_feature[group_class_feature["class"] == "Нелегальная"]
-        class_lisit = group_class_feature[group_class_feature['class'] == "Легальная"]
-        class_unknown = group_class_feature[group_class_feature['class'] == "Неизвестная"]
+        class_illisit = group_class_feature[group_class_feature["class"] == self.__classes_en_to_rus["illicit"]]
+        class_lisit = group_class_feature[group_class_feature['class'] == self.__classes_en_to_rus["licit"]]
+        class_unknown = group_class_feature[group_class_feature['class'] == self.__classes_en_to_rus["unknown"]]
 
         # plotting
         plt.bar(x=class_unknown['time_step'],
@@ -121,8 +121,9 @@ class DatasetAnalyser:
                 bottom=np.array(class_unknown['count']) + np.array(class_lisit['count']))
 
         labels = list(self.__colors.keys())
-        handles = [plt.Rectangle((0, 0), 1, 1, color=self.__colors[label]) for label in self.__colors.keys()]
-        plt.legend(handles, labels)
+        labels_translated = [self.__classes_en_to_rus[i] for i in labels]
+        handles = [plt.Rectangle((0, 0), 1, 1, color=self.__colors[label]) for label in labels]
+        plt.legend(handles, labels_translated)
 
         # prettify, save, show
         plt.xlabel("Временной шаг")
@@ -134,26 +135,6 @@ class DatasetAnalyser:
     # ==================================================================================================================
     # PUBLIC
     # ==================================================================================================================
-
-    def __plot_transactions_classes_by_time_step(self):
-        # Merge Class and features
-        df_class_feature = pd.merge(self.__df_classes, self.__df_features)
-
-        group_class_feature = df_class_feature.groupby(['time_step', 'class']).count()
-        group_class_feature = group_class_feature['tx_id'].reset_index().rename(columns={'tx_id': 'count'})
-        sns.lineplot(x='time_step', y='count', hue='class', data=group_class_feature, palette=['r', 'g', 'orange'])
-        plt.show()
-
-        class_illisit = group_class_feature[group_class_feature['class'] == 1]
-        class_lisit = group_class_feature[group_class_feature['class'] == 2]
-        class_unknown = group_class_feature[group_class_feature['class'] == 3]
-        plt.bar(class_unknown['time_step'], class_unknown['count'], color='orange')
-        plt.bar(class_lisit['time_step'], class_lisit['count'], color='g',
-                bottom=class_unknown['count'])
-        plt.bar(class_illisit['time_step'], class_illisit['count'], color='r',
-                bottom=np.array(class_unknown['count']) + np.array(class_lisit['count']))
-        plt.xlabel('time_step')
-        plt.show()
 
     def analyse(self) -> None:
         logger_prefix = self.__get_logger_prefix("analyse")
