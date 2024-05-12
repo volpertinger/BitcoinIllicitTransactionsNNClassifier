@@ -5,6 +5,8 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import pickle
 import numpy as np
+from numpy import ndarray
+
 import Sources.Metrics as Metrics
 from sklearn import metrics
 
@@ -25,6 +27,7 @@ class Model:
                  plot_width: int,
                  plot_height: int,
                  plot_save_dir: str,
+                 prediction_border: float,
                  logger: logging.Logger = logging.getLogger()):
         # base init from params
         self.__logger_prefix = "[Model]"
@@ -42,6 +45,7 @@ class Model:
         self.__plot_width = plot_width
         self.__plot_height = plot_height
         self.__plot_save_dir = plot_save_dir
+        self.__prediction_border = prediction_border
 
         # init None inputs and outputs
         self.__train_input = None
@@ -91,16 +95,18 @@ class Model:
             self.__model.history = pickle.load(file=f)
         self.__is_fresh_learned = True
 
+    def __predict_log_proba(self, predictions) -> ndarray:
+        return np.array([1 if x >= self.__prediction_border else 0 for x in predictions])
+
     def __get_model(self) -> tf.keras.Model:
         model = tf.keras.Sequential([
             tf.keras.layers.Dense(units=self.__input_neurons, activation=self.__activation),
             tf.keras.layers.Dense(self.__hidden_neurons, activation=self.__activation),
             tf.keras.layers.Dropout(rate=self.__dropout_rate, seed=self.__seed),
-            tf.keras.layers.Dense(units=self.__output_neurons),
-            tf.keras.layers.Softmax()
+            tf.keras.layers.Dense(units=self.__output_neurons, activation="sigmoid")
         ])
         model.compile(optimizer=self.__optimizer,
-                      loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                      loss=tf.keras.losses.BinaryCrossentropy(),
                       metrics=["accuracy"])
         return model
 
@@ -179,8 +185,8 @@ class Model:
         self.__logger.info(f"{logger_prefix} start")
 
         labels = self.__validation_output.to_numpy().flatten()
-        predictions = self.__model.predict(x=self.__validation_input)
-        predictions = np.argmax(predictions, axis=1)
+        predictions = tf.squeeze(self.__model.predict(x=self.__validation_input))
+        predictions = self.__predict_log_proba(predictions)
         confusion_matrix = metrics.confusion_matrix(labels, predictions)
 
         print(confusion_matrix)
@@ -208,6 +214,7 @@ class Model:
         validation_output_array = self.__validation_output.to_numpy()
         validation_length = len(self.__validation_input)
         predictions = self.__model.predict(self.__validation_input)
+        predictions = self.__predict_log_proba(predictions)
         self.__logger.info(f"{logger_prefix}\n"
                            f"Instruction:\n"
                            f"Enter an index from 0 to {validation_length - 1} from validation input to test\n"
@@ -224,7 +231,6 @@ class Model:
                                     f"Correct values is from 0 to {validation_length - 1}")
             else:
                 self.__logger.info(f"Prediction for index {index}: {predictions[index]}. "
-                                   f"Most probably class is [{tf.argmax(predictions[index])}]. "
                                    f"Correct value is {validation_output_array[index]}")
 
         self.__logger.info(f"{logger_prefix} end")

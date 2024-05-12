@@ -44,6 +44,7 @@ def model_actions(config: configparser.ConfigParser, logger: Logger) -> None:
                         plot_save_dir=config["Saves"]["model"],
                         plot_width=config.getint("Plot", "width"),
                         plot_height=config.getint("Plot", "height"),
+                        prediction_border=config.getfloat("Learn", "prediction_border"),
                         logger=logger)
 
     if config.getboolean("Actions", "is_need_to_learn"):
