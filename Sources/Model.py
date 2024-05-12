@@ -100,7 +100,7 @@ class Model:
     def __get_model(self) -> tf.keras.Model:
         model = tf.keras.Sequential([
             tf.keras.layers.Dense(units=self.__input_neurons, activation=self.__activation),
-            tf.keras.layers.Dense(units=200,
+            tf.keras.layers.Dense(units=self.__epochs,
                                   activation=self.__activation,
                                   activity_regularizer=tf.keras.regularizers.l2(0.015),
                                   kernel_regularizer=tf.keras.regularizers.l1(0.015)),
@@ -110,9 +110,9 @@ class Model:
         model.compile(optimizer=self.__optimizer,
                       loss=tf.keras.losses.BinaryCrossentropy(),
                       metrics=[tf.keras.metrics.BinaryAccuracy(name="accuracy"),
-                               tf.keras.metrics.Precision(name="precision", thresholds=0.5),
-                               tf.keras.metrics.Recall(name="recall", thresholds=0.5),
-                               tf.keras.metrics.F1Score(name="f1", threshold=0.5),
+                               tf.keras.metrics.Precision(name="precision", thresholds=self.__prediction_border),
+                               tf.keras.metrics.Recall(name="recall", thresholds=self.__prediction_border),
+                               tf.keras.metrics.F1Score(name="f1", threshold=self.__prediction_border),
                                tf.keras.metrics.TruePositives(name="TP"),
                                tf.keras.metrics.TrueNegatives(name="TN"),
                                tf.keras.metrics.FalsePositives(name="FP"),
