@@ -7,7 +7,6 @@ import pickle
 import numpy as np
 from numpy import ndarray
 
-import Sources.Metrics as Metrics
 from sklearn import metrics
 
 
@@ -101,17 +100,23 @@ class Model:
     def __get_model(self) -> tf.keras.Model:
         model = tf.keras.Sequential([
             tf.keras.layers.Dense(units=self.__input_neurons, activation=self.__activation),
-            tf.keras.layers.Dense(units=40,
-                                  activation=self.__activation),
+            tf.keras.layers.Dense(units=200,
+                                  activation=self.__activation,
+                                  activity_regularizer=tf.keras.regularizers.l2(0.015),
+                                  kernel_regularizer=tf.keras.regularizers.l1(0.015)),
             tf.keras.layers.Dropout(rate=self.__dropout_rate, seed=self.__seed),
             tf.keras.layers.Dense(units=self.__output_neurons, activation="sigmoid")
         ])
         model.compile(optimizer=self.__optimizer,
                       loss=tf.keras.losses.BinaryCrossentropy(),
                       metrics=[tf.keras.metrics.BinaryAccuracy(name="accuracy"),
-                               tf.keras.metrics.Precision(name="precision"),
-                               tf.keras.metrics.Recall(name="recall"),
-                               tf.keras.metrics.F1Score(name="f1", average="micro")])
+                               tf.keras.metrics.Precision(name="precision", thresholds=0.5),
+                               tf.keras.metrics.Recall(name="recall", thresholds=0.5),
+                               tf.keras.metrics.F1Score(name="f1", threshold=0.5),
+                               tf.keras.metrics.TruePositives(name="TP"),
+                               tf.keras.metrics.TrueNegatives(name="TN"),
+                               tf.keras.metrics.FalsePositives(name="FP"),
+                               tf.keras.metrics.FalseNegatives(name="FN")])
         return model
 
     def __plot_by_epochs(self, lhs, rhs, lhs_label: str, rhs_label: str, x_label: str, y_label: str, title: str,
@@ -222,23 +227,19 @@ class Model:
         logger_prefix = self.__get_logger_prefix("__plot_metrics")
         self.__logger.info(f"{logger_prefix} start")
 
-        labels = self.__validation_output.to_numpy().flatten()
-        predictions = tf.squeeze(self.__model.predict(x=self.__validation_input))
-        predictions = self.__predict_log_proba(predictions)
-        confusion_matrix = metrics.confusion_matrix(labels, predictions)
+        result = self.__model.evaluate(x=self.__validation_input, y=self.__validation_output.to_numpy().flatten())
+        accuracy = result[1]
+        precision = result[2]
+        recall = result[3]
+        f1 = result[4][0]
+        tp = int(result[5])
+        tn = int(result[6])
+        fp = int(result[7])
+        fn = int(result[8])
+        print(result)
 
-        print(confusion_matrix)
-        true_negative = confusion_matrix[1][1]
-        true_positive = confusion_matrix[0][0]
-        false_negative = confusion_matrix[0][1]
-        false_positive = confusion_matrix[1][0]
-        accuracy = Metrics.accuracy(true_positive=true_positive,
-                                    true_negative=true_negative,
-                                    false_positive=false_positive,
-                                    false_negative=false_negative)
-        precision = Metrics.precision(true_positive=true_positive, false_positive=false_positive)
-        recall = Metrics.recall(true_positive=true_positive, false_negative=false_negative)
-        f1 = Metrics.f1(true_positive=true_positive, false_positive=false_positive, false_negative=false_negative)
+        print(f"tp: {tp}; tn: {tn}; fp: {fp}; fn: {fn};")
+        confusion_matrix = np.array([[tn, fp], [fn, tp]])
 
         self.__plot_confusion_matrix(confusion_matrix)
         self.__plot_metrics_bar(accuracy=accuracy, precision=precision, recall=recall, f1=f1)
@@ -311,7 +312,7 @@ class Model:
         else:
             self.__logger.info(f"{logger_prefix} model is fresh, continue with current weights")
         self.__init_validation()
-        self.__plot_history()
+        # self.__plot_history()
         self.__plot_metrics()
 
         self.__logger.info(f"{logger_prefix} end")

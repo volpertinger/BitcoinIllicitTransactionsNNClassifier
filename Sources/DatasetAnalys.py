@@ -51,11 +51,15 @@ class DatasetAnalyser:
         # edges
         self.__df_edges = self.__df_edges.rename(columns={"txId1": "tx_id_lhs", "txId2": "tx_id_rhs"})
 
+        # classes
+        self.__df_classes = self.__df_classes.rename(columns={"txId": "tx_id"})
+
         # features
         self.__df_features.columns = ["tx_id"] + \
                                      ["time_step"] + \
                                      [f"local_feature_{i + 1}" for i in range(93)] + \
                                      [f"aggregated_feature_{i + 1}" for i in range(72)]
+        self.__df_features = pd.merge(self.__df_classes, self.__df_features)
 
         # deleting unknown classes
         self.__df_classes = self.__df_classes.drop(self.__df_classes[self.__df_classes["class"] == "unknown"].index)
@@ -63,10 +67,12 @@ class DatasetAnalyser:
 
         # classes
         self.__df_classes["class"] = self.__df_classes["class"].map(
-            {"1": self.__classes_en_to_rus["licit"],
-             "2": self.__classes_en_to_rus["illicit"],
+            {"1": self.__classes_en_to_rus["illicit"],
+             "2": self.__classes_en_to_rus["licit"],
              "unknown": self.__classes_en_to_rus["licit"]})
-        self.__df_classes = self.__df_classes.rename(columns={"txId": "tx_id"})
+
+        # features
+        self.__df_features = self.__df_features.drop(columns=["class"], axis="columns")
 
     def __get_df_heads_str(self) -> str:
         return f"{'=' * 120}\n" \

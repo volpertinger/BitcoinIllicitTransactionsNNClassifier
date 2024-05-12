@@ -39,7 +39,7 @@ def preprocess_data(logger: logging.Logger,
     logger.info(f"{logger_prefix} deleting axis in classes")
     df_classes = df_classes.drop(columns=["txId"], axis="columns")
     logger.info(f"{logger_prefix} deleting axis in features")
-    df_features = df_features.drop(columns=["txId", "time_step"], axis="columns")
+    df_features = df_features.drop(columns=["txId", "time_step", "class"], axis="columns")
 
     # split to train, test, validation
     train_classes, test_classes, train_features, test_features = train_test_split(df_classes,
