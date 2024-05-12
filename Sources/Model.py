@@ -312,7 +312,7 @@ class Model:
         else:
             self.__logger.info(f"{logger_prefix} model is fresh, continue with current weights")
         self.__init_validation()
-        # self.__plot_history()
+        self.__plot_history()
         self.__plot_metrics()
 
         self.__logger.info(f"{logger_prefix} end")
