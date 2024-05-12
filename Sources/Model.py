@@ -107,7 +107,10 @@ class Model:
         ])
         model.compile(optimizer=self.__optimizer,
                       loss=tf.keras.losses.BinaryCrossentropy(),
-                      metrics=["accuracy"])
+                      metrics=[tf.keras.metrics.BinaryAccuracy(name="accuracy"),
+                               tf.keras.metrics.Precision(name="precision"),
+                               tf.keras.metrics.Recall(name="recall"),
+                               tf.keras.metrics.F1Score(name="f1", average="macro", threshold=0.5)])
         return model
 
     def __plot_by_epochs(self, lhs, rhs, lhs_label: str, rhs_label: str, x_label: str, y_label: str, title: str,
@@ -128,26 +131,60 @@ class Model:
         logger_prefix = self.__get_logger_prefix("__plot_history")
         self.__logger.info(f"{logger_prefix} start")
 
-        # accuracy
-        self.__logger.info(f"{logger_prefix} plot accuracy")
-        self.__plot_by_epochs(lhs=self.__model.history.history["accuracy"],
-                              rhs=self.__model.history.history["val_accuracy"],
-                              lhs_label="Training accuracy",
-                              rhs_label="Validation accuracy",
-                              x_label="Epochs",
-                              y_label="Accuracy",
-                              title="Training and validation accuracy",
-                              save_file_name="accuracy_by_epoch")
         # loss
         self.__logger.info(f"{logger_prefix} plot loss")
         self.__plot_by_epochs(lhs=self.__model.history.history["loss"],
                               rhs=self.__model.history.history["val_loss"],
                               lhs_label="Training loss",
-                              rhs_label="Validation loss",
+                              rhs_label="Test loss",
                               x_label="Epochs",
                               y_label="Loss",
-                              title="Training and validation loss",
+                              title="Training and test loss",
                               save_file_name="loss_by_epoch")
+
+        # accuracy
+        self.__logger.info(f"{logger_prefix} plot accuracy")
+        self.__plot_by_epochs(lhs=self.__model.history.history["accuracy"],
+                              rhs=self.__model.history.history["val_accuracy"],
+                              lhs_label="Training accuracy",
+                              rhs_label="Test accuracy",
+                              x_label="Epochs",
+                              y_label="Accuracy",
+                              title="Training and test accuracy",
+                              save_file_name="accuracy_by_epoch")
+
+        # precision
+        self.__logger.info(f"{logger_prefix} plot precision")
+        self.__plot_by_epochs(lhs=self.__model.history.history["precision"],
+                              rhs=self.__model.history.history["val_precision"],
+                              lhs_label="Training precision",
+                              rhs_label="Test precision",
+                              x_label="Epochs",
+                              y_label="Precision",
+                              title="Training and test precision",
+                              save_file_name="precision_by_epoch")
+
+        # recall
+        self.__logger.info(f"{logger_prefix} plot recall")
+        self.__plot_by_epochs(lhs=self.__model.history.history["recall"],
+                              rhs=self.__model.history.history["val_recall"],
+                              lhs_label="Training recall",
+                              rhs_label="Test recall",
+                              x_label="Epochs",
+                              y_label="Recall",
+                              title="Training and test recall",
+                              save_file_name="recall_by_epoch")
+
+        # f1
+        self.__logger.info(f"{logger_prefix} plot f1")
+        self.__plot_by_epochs(lhs=self.__model.history.history["f1"],
+                              rhs=self.__model.history.history["val_f1"],
+                              lhs_label="Training f1",
+                              rhs_label="Test f1",
+                              x_label="Epochs",
+                              y_label="F1",
+                              title="Training and test f1",
+                              save_file_name="f1_by_epoch")
 
         self.__logger.info(f"{logger_prefix} end")
 

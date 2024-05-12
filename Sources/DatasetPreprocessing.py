@@ -22,7 +22,7 @@ def preprocess_data(logger: logging.Logger,
 
     # mapping all classes to int
     logger.info(f"{logger_prefix} mapping classes to int")
-    df_classes['class'] = df_classes['class'].map({'unknown': 0, '1': 1, '2': 0})
+    df_classes['class'] = df_classes['class'].map({'unknown': 0., '1': 1., '2': 0.})
 
     # deleting axis
     logger.info(f"{logger_prefix} deleting axis in classes")
