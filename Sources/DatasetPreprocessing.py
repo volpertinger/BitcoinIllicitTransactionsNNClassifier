@@ -20,15 +20,26 @@ def preprocess_data(logger: logging.Logger,
     df_features = pd.read_csv(features_path, header=None)
     df_classes = pd.read_csv(classes_path)
 
+    # add header to features for merge
+    df_features.columns = ["txId"] + \
+                          ["time_step"] + \
+                          [f"local_feature_{i + 1}" for i in range(93)] + \
+                          [f"aggregated_feature_{i + 1}" for i in range(72)]
+    df_features = pd.merge(df_classes, df_features)
+
+    # deleting unknown classes
+    df_classes = df_classes.drop(df_classes[df_classes["class"] == "unknown"].index)
+    df_features = df_features.drop(df_features[df_features["class"] == "unknown"].index)
+
     # mapping all classes to int
     logger.info(f"{logger_prefix} mapping classes to int")
-    df_classes['class'] = df_classes['class'].map({'unknown': 0., '1': 1., '2': 0.})
+    df_classes["class"] = df_classes["class"].map({"unknown": 0., "1": 1., "2": 0.})
 
     # deleting axis
     logger.info(f"{logger_prefix} deleting axis in classes")
     df_classes = df_classes.drop(columns=["txId"], axis="columns")
     logger.info(f"{logger_prefix} deleting axis in features")
-    df_features = df_features.drop(columns=[0], axis="columns")
+    df_features = df_features.drop(columns=["txId", "time_step"], axis="columns")
 
     # split to train, test, validation
     train_classes, test_classes, train_features, test_features = train_test_split(df_classes,

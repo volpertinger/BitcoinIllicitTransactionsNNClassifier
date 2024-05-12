@@ -101,7 +101,8 @@ class Model:
     def __get_model(self) -> tf.keras.Model:
         model = tf.keras.Sequential([
             tf.keras.layers.Dense(units=self.__input_neurons, activation=self.__activation),
-            tf.keras.layers.Dense(self.__hidden_neurons, activation=self.__activation),
+            tf.keras.layers.Dense(units=40,
+                                  activation=self.__activation),
             tf.keras.layers.Dropout(rate=self.__dropout_rate, seed=self.__seed),
             tf.keras.layers.Dense(units=self.__output_neurons, activation="sigmoid")
         ])
@@ -110,7 +111,7 @@ class Model:
                       metrics=[tf.keras.metrics.BinaryAccuracy(name="accuracy"),
                                tf.keras.metrics.Precision(name="precision"),
                                tf.keras.metrics.Recall(name="recall"),
-                               tf.keras.metrics.F1Score(name="f1", average="macro", threshold=0.5)])
+                               tf.keras.metrics.F1Score(name="f1", average="micro")])
         return model
 
     def __plot_by_epochs(self, lhs, rhs, lhs_label: str, rhs_label: str, x_label: str, y_label: str, title: str,

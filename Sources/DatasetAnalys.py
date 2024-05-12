@@ -48,13 +48,6 @@ class DatasetAnalyser:
                f"features_path: {self.__features_path}"
 
     def __df_prettify(self) -> None:
-        # classes
-        self.__df_classes["class"] = self.__df_classes["class"].map(
-            {"1": self.__classes_en_to_rus["licit"],
-             "2": self.__classes_en_to_rus["illicit"],
-             "unknown": self.__classes_en_to_rus["licit"]})
-        self.__df_classes = self.__df_classes.rename(columns={"txId": "tx_id"})
-
         # edges
         self.__df_edges = self.__df_edges.rename(columns={"txId1": "tx_id_lhs", "txId2": "tx_id_rhs"})
 
@@ -63,6 +56,17 @@ class DatasetAnalyser:
                                      ["time_step"] + \
                                      [f"local_feature_{i + 1}" for i in range(93)] + \
                                      [f"aggregated_feature_{i + 1}" for i in range(72)]
+
+        # deleting unknown classes
+        self.__df_classes = self.__df_classes.drop(self.__df_classes[self.__df_classes["class"] == "unknown"].index)
+        self.__df_features = self.__df_features.drop(self.__df_features[self.__df_features["class"] == "unknown"].index)
+
+        # classes
+        self.__df_classes["class"] = self.__df_classes["class"].map(
+            {"1": self.__classes_en_to_rus["licit"],
+             "2": self.__classes_en_to_rus["illicit"],
+             "unknown": self.__classes_en_to_rus["licit"]})
+        self.__df_classes = self.__df_classes.rename(columns={"txId": "tx_id"})
 
     def __get_df_heads_str(self) -> str:
         return f"{'=' * 120}\n" \
